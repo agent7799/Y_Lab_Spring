@@ -4,10 +4,7 @@ import com.edu.ulab.app.dto.BookDto;
 import com.edu.ulab.app.dto.UserDto;
 import com.edu.ulab.app.mapper.BookMapper;
 import com.edu.ulab.app.mapper.UserMapper;
-import com.edu.ulab.app.service.BookService;
-import com.edu.ulab.app.service.UserService;
-import com.edu.ulab.app.storage.BookStorage;
-import com.edu.ulab.app.storage.UserStorage;
+import com.edu.ulab.app.service.impl.*;
 import com.edu.ulab.app.web.request.UserBookRequest;
 import com.edu.ulab.app.web.response.UserBookResponse;
 import lombok.extern.slf4j.Slf4j;
@@ -16,20 +13,43 @@ import org.springframework.stereotype.Component;
 import java.util.List;
 import java.util.Objects;
 
-import static com.edu.ulab.app.storage.BookStorage.getBooksIdListFromStorageByUserID;
-
 @Slf4j
 @Component
 public class UserDataFacade {
-    private final UserService userService;
-    private final BookService bookService;
+    //Implementation of local storage with Map
+//    private final UserServiceStorageImpl userService;
+//    private final BookServiceStorageImpl bookService;
+
+    //implementation of storage with CrudRepository
+//    private final UserServiceImpl userService;
+//    private final BookServiceImpl bookService;
+
+    //implementation of storage with JdbcTemplate
+    private final UserServiceImplTemplate userService;
+    private final BookServiceImplTemplate bookService;
+
+
+
     private final UserMapper userMapper;
     private final BookMapper bookMapper;
 
-    public UserDataFacade(UserService userService,
-                          BookService bookService,
+
+    //Implementation of local storage with Map
+//    public UserDataFacade(UserServiceStorageImpl userService,
+//                          BookServiceStorageImpl bookService,
+
+    //implementation of storage with CrudRepository
+//    public UserDataFacade(UserServiceImpl userService,
+//                          BookServiceImpl bookService,
+
+//implementation of storage with JdbcTemplate
+    public UserDataFacade(UserServiceImplTemplate userService,
+                          BookServiceImplTemplate bookService,
+
                           UserMapper userMapper,
-                          BookMapper bookMapper) {
+                          BookMapper bookMapper)
+
+    {
         this.userService = userService;
         this.bookService = bookService;
         this.userMapper = userMapper;
@@ -66,9 +86,9 @@ public class UserDataFacade {
         log.info("Got user book update request: {}", userBookRequest);
         UserDto userDto = userMapper.userRequestToUserDto(userBookRequest.getUserRequest());
         log.info("Mapped user request: {}", userDto);
-
         UserDto updatedUser = userService.updateUser(userDto, userId);
         log.info("Updated user: {}", updatedUser);
+        bookService.deleteBookById(updatedUser.getId());
 
         List<Long> bookIdList = userBookRequest.getBookRequests()
                 .stream()
@@ -76,8 +96,8 @@ public class UserDataFacade {
                 .map(bookMapper::bookRequestToBookDto)
                 .peek(bookDto -> bookDto.setUserId(updatedUser.getId()))
                 .peek(mappedBookDto -> log.info("mapped book: {}", mappedBookDto))
-                .map(bookService::updateBook)
-                .peek(updateBook -> log.info("Updated book: {}", updateBook))
+                .map(bookService::createBook)
+                .peek(createdBook -> log.info("Created book: {}", createdBook))
                 .map(BookDto::getId)
                 .toList();
         log.info("Collected book ids: {}", bookIdList);
@@ -86,19 +106,26 @@ public class UserDataFacade {
                 .userId(updatedUser.getId())
                 .booksIdList(bookIdList)
                 .build();
-
     }
 
     public UserBookResponse getUserWithBooks(Long userId) {
-        return UserBookResponse.builder()
+        UserBookResponse response = UserBookResponse.builder()
                 .userId(userId)
-                .booksIdList(getBooksIdListFromStorageByUserID(userId))
+                .booksIdList(bookService.getBooksListById(userId))
                 .build();
+        log.info("getUserWithBooks:  response: {}", response);
+        return response;
+
     }
 
 
     public void deleteUserWithBooks(Long userId) {
-        UserStorage.deleteUserFromStorage(userId);
-        BookStorage.deleteBookFromStorageByUserId(userId);
+        //implementation with local Storage
+//        UserStorage.deleteUserFromStorage(userId);
+//        BookStorage.deleteBookFromStorageByUserId(userId);
+
+        //implementation with repository/Jdbc
+        userService.deleteUserById(userId);
+        bookService.deleteBookById(userId);
     }
 }

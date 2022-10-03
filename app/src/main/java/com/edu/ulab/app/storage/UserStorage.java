@@ -2,11 +2,12 @@ package com.edu.ulab.app.storage;
 
 import com.edu.ulab.app.dto.UserDto;
 import com.edu.ulab.app.exception.NotFoundException;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import java.util.HashMap;
 import java.util.Map;
 
-
+@Slf4j
 @Component
 public class UserStorage {
     //todo создать хранилище в котором будут содержаться данные
@@ -28,18 +29,11 @@ public class UserStorage {
     private static Map<Long, UserDto> usersList = new HashMap<>();
 
     public void addUserToStorage(UserDto userDto, long userId){
-        if(!usersList.containsValue(userDto)){
             usersList.put(userId, userDto);
-        }
     }
 
     public UserDto getUserFromStorage(Long userId){
-        if (usersList.containsKey(userId)){
             return usersList.get(userId);
-        }
-        else{
-            throw new NotFoundException("User with id = " + userId + " not found");
-        }
     }
 
     public static void deleteUserFromStorage(Long userId){
@@ -47,8 +41,12 @@ public class UserStorage {
     }
 
     public UserDto updateUserInStorage(long userId, UserDto userDto){
+            UserDto initialUser = usersList.get(userId);
+            userDto.setId(userId);
             usersList.put(userId, userDto);
-            return usersList.get(userId);
+            UserDto updatedUser = usersList.get(userId);
+        log.info("User {} updated to {}", initialUser, updatedUser);
+            return updatedUser;
     }
 
 

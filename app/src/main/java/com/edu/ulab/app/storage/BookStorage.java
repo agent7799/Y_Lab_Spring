@@ -1,9 +1,11 @@
 package com.edu.ulab.app.storage;
 
 import com.edu.ulab.app.dto.BookDto;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import java.util.*;
 
+@Slf4j
 @Component
 public class BookStorage {
 
